@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Your Best Plate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Archivo+Black&family=Archivo+Narrow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* EASY EDITS: goals and foods are in the CONFIG block in the <script> below. */
+  :root {
+    --teal: #016d75;
+    --teal-soft: #2a868c;
+    --aqua: #83c4bf;
+    --ice: #d6ecf5;
+    --cream: #f6f4d6;
+    --white: #ffffff;
+    --ink: #0d3b40;
+    --muted: #4f6f72;
+    --carb: #e39a2d;
+    --protein: #1f6fb2;
+    --fat: #8e5bb5;
+    --good: #2f9e5c;
+    --track: #e2e8e6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background: var(--teal);
+    font-family: "Archivo", system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    touch-action: none;
+    user-select: none; -webkit-user-select: none;
+  }
+
+  /* The page is laid out like a 16:9 Genially slide and scales to fit. */
+  .stage {
+    position: absolute; left: 50%; top: 50%;
+    width: 1280px; height: 720px;
+    transform-origin: center center;
+    background: var(--teal);
+    overflow: hidden;
+  }
+  .deco-ring {
+    position: absolute; right: -170px; top: -260px; width: 560px; height: 560px;
+    border-radius: 50%; border: 90px solid rgba(255,255,255,.09); pointer-events: none;
+  }
+
+  header { position: absolute; left: 40px; top: 18px; right: 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+  h1 { margin: 0; color: var(--white); font-weight: 700; font-size: 44px; line-height: 1; letter-spacing: -.5px; }
+  .subtitle { margin: 6px 0 0; font-family: "Archivo Narrow", sans-serif; color: var(--ice); font-size: 19px; }
+  .challenges { display: flex; gap: 8px; margin-top: 6px; }
+  .chip {
+    font: 700 14px "Archivo", sans-serif;
+    border: 2px solid var(--ice); background: rgba(1,109,117,.6); color: var(--ice);
+    border-radius: 999px; padding: 7px 14px; cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ice); color: var(--teal); }
+
+  /* ---------- Food tray ---------- */
+  .tray {
+    position: absolute; left: 30px; right: 30px; top: 108px; height: 262px;
+    display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 4px 6px;
+  }
+  .food {
+    width: 116px; height: 126px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    cursor: grab; border-radius: 12px; padding: 2px 2px 4px;
+    transition: transform .12s, background .15s;
+    touch-action: none;
+  }
+  .food:hover { transform: translateY(-3px); background: rgba(255,255,255,.08); }
+  .food .pic { width: 100%; height: 78px; display: flex; align-items: center; justify-content: center; }
+  .food img { max-width: 100%; max-height: 78px; object-fit: contain; pointer-events: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.25)); }
+  .food .emoji { font-size: 54px; line-height: 1; }
+  .food .name { color: var(--white); font-weight: 700; font-size: 13px; line-height: 1.1; text-align: center; margin-top: 3px; }
+  .food .mac { font-family: "Archivo Narrow", sans-serif; color: var(--ice); font-size: 12px; margin-top: 1px; white-space: nowrap; }
+  .food.placeholder { visibility: hidden; }
+
+  /* ---------- Plate ---------- */
+  .plate {
+    position: absolute; left: 40px; top: 382px; width: 720px; height: 322px;
+    background: var(--cream); border-radius: 50%;
+    box-shadow: 0 8px 22px rgba(0,40,44,.3);
+    transition: box-shadow .15s, transform .15s;
+  }
+  .plate.hot { box-shadow: 0 0 0 6px var(--ice), 0 8px 22px rgba(0,40,44,.3); transform: scale(1.01); }
+  .plate-items {
+    position: absolute; left: 90px; right: 90px; top: 34px; bottom: 64px;
+    display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2px 4px;
+  }
+  .plate-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); font-family: "Archivo Narrow", sans-serif; font-size: 20px; padding-bottom: 30px; pointer-events: none; }
+  .plate-label {
+    position: absolute; left: 0; right: 0; bottom: 18px; text-align: center;
+    font-family: "Archivo Black", sans-serif; font-size: 30px; color: var(--teal); letter-spacing: 1.5px;
+    text-shadow: 0 2px 3px rgba(0,0,0,.18); pointer-events: none;
+  }
+  .plate .food { width: 82px; height: 80px; }
+  .plate .food .pic { height: 58px; }
+  .plate .food img { max-height: 58px; }
+  .plate .food .emoji { font-size: 40px; }
+  .plate .food .name { color: var(--ink); font-size: 11px; }
+  .plate .food .mac { display: none; }
+  .plate .food:hover { background: rgba(1,109,117,.08); }
+
+  /* ---------- Scoreboard ---------- */
+  .score {
+    position: absolute; left: 790px; top: 382px; width: 450px; height: 322px;
+    background: var(--ice); border-radius: 18px; padding: 16px 20px;
+    box-shadow: 0 8px 22px rgba(0,40,44,.3);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .score h2 { margin: 0; font-family: "Archivo Black", sans-serif; font-weight: 400; color: var(--teal); font-size: 22px; letter-spacing: .5px; }
+  .goal-desc { margin: -6px 0 2px; font-family: "Archivo Narrow", sans-serif; color: var(--muted); font-size: 17px; }
+  .bar-row .label { display: flex; justify-content: space-between; align-items: baseline; font-weight: 700; font-size: 17px; }
+  .bar-row .num { font-weight: 600; font-size: 15px; color: var(--muted); }
+  .bar-row.done .num { color: var(--good); }
+  .track { height: 16px; background: var(--white); border-radius: 8px; overflow: hidden; margin-top: 4px; }
+  .fill { height: 100%; width: 0; border-radius: 8px; transition: width .35s ease; }
+  .bar-row.carbs .fill { background: var(--carb); }
+  .bar-row.protein .fill { background: var(--protein); }
+  .bar-row.fat .fill { background: var(--fat); }
+  .bar-row.done .fill { background: var(--good); }
+  .bar-row.nogoal .track { display: none; }
+  .score-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .banner { flex: 1; visibility: hidden; background: var(--good); color: var(--white); border-radius: 10px; padding: 8px 10px; text-align: center; font-family: "Archivo Black", sans-serif; font-size: 15px; }
+  .banner.show { visibility: visible; animation: pop .4s ease; }
+  .reset { font: 700 14px "Archivo", sans-serif; background: var(--teal); color: var(--white); border: none; border-radius: 999px; padding: 9px 16px; cursor: pointer; }
+  .note { position: absolute; right: 40px; bottom: 2px; font-family: "Archivo Narrow", sans-serif; font-size: 11px; color: var(--aqua); }
+
+  /* drag ghost */
+  .ghost { position: fixed; z-index: 50; pointer-events: none; transform: translate(-50%, -60%) scale(1.08); filter: drop-shadow(0 10px 12px rgba(0,0,0,.35)); }
+  .ghost .name, .ghost .mac { display: none; }
+  .food.pop { animation: pop .3s ease; }
+  @keyframes pop { 50% { transform: scale(1.08); } }
+
+  .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 60; }
+  .confetti i { position: absolute; top: -12px; width: 9px; height: 13px; border-radius: 2px; animation: fall 1.8s ease-in forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); opacity: .8; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="deco-ring"></div>
+  <header>
+    <div>
+      <h1>Build Your Best Plate</h1>
+      <p class="subtitle">Drag foods onto your plate until you reach the goal!</p>
+    </div>
+    <div class="challenges" id="challenges" role="group" aria-label="Choose a goal"></div>
+  </header>
+
+  <div class="tray" id="tray" aria-label="Foods"></div>
+
+  <div class="plate" id="plate" aria-label="Your plate">
+    <div class="plate-hint" id="hint">Drop foods here</div>
+    <div class="plate-items" id="plateItems"></div>
+    <div class="plate-label">My Plate</div>
+  </div>
+
+  <section class="score" aria-label="Totals">
+    <h2 id="goalName">PROTEIN GOAL</h2>
+    <p class="goal-desc" id="goalDesc"></p>
+    <div id="bars" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div class="score-foot">
+      <div class="banner" id="banner" role="status" aria-live="polite"></div>
+      <button class="reset" id="reset">Start over</button>
+    </div>
+  </section>
+  <div class="note">Macro amounts are approximate.</div>
+</div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<script>
+/* ==================================================================
+   CONFIG — edit here.
+   showMacros: true shows each food's grams under it in the tray;
+               false hides them so students have to guess.
+   challenges: goals in grams. Leave a macro out and it just shows
+               the running total. The first one is the default.
+   foods:      c = carbs, p = protein, f = fat (grams per serving).
+               img = the same pictures used on the Matchup page.
+   ================================================================== */
+const IMG = "https://compressed-images.genially.com/img/team-66b6dc13e92d6a84e73a2236/";
+const CONFIG = {
+  showMacros: true,
+  challenges: [
+    { name: "Protein Goal",   desc: "Keep adding foods until you reach 50g of protein.", goals: { protein: 50 } },
+    { name: "Pre-Race Meal",  desc: "3–4 hours before: fuel up with about 75g of carbs.", goals: { carbs: 75 } },
+    { name: "Recovery Plate", desc: "After the race: about 50g carbs + 20g protein.",     goals: { carbs: 50, protein: 20 } }
+  ],
+  foods: [
+    { name: "Sports drink",  emoji: "🧃", c: 36, p: 0,  f: 0,  img: "6af1fbbfa9598731b99fa65b/Asset_15.png/format=webp" },
+    { name: "Cheeseburger",  emoji: "🍔", c: 33, p: 15, f: 13, img: "6af1fbc049f10b0edd996703/Asset_17.png/format=webp" },
+    { name: "Steak",         emoji: "🥩", c: 0,  p: 25, f: 6,  img: "6af1fbbfa9598731b99fa657/Asset_13.png/format=webp" },
+    { name: "Pizza",         emoji: "🍕", c: 36, p: 13, f: 12, img: "6af1fbc049f10b0edd996701/Asset_16.png/format=webp" },
+    { name: "Chicken leg",   emoji: "🍗", c: 0,  p: 14, f: 6,  img: "6af1fbab024a3990b659d6ab/Asset_6.png/format=webp" },
+    { name: "Bagel",         emoji: "🥯", c: 53, p: 10, f: 2,  img: "6af1fbc1da92aa8917cee902/Asset_22.png/format=webp" },
+    { name: "Quinoa",        emoji: "🥣", c: 39, p: 8,  f: 4,  img: "6af1fbbfa9598731b99fa659/Asset_14.png/format=webp" },
+    { name: "Banana",        emoji: "🍌", c: 27, p: 1,  f: 0,  img: "6af1fbac586454bcbb7aaf0b/Asset_10.png/format=webp" },
+    { name: "Sweet potato",  emoji: "🍠", c: 24, p: 2,  f: 0,  img: "6af1fbab024a3990b659d6a9/Asset_5.png/format=webp" },
+    { name: "Avocado",       emoji: "🥑", c: 9,  p: 2,  f: 15, img: "6af1fbbfa9598731b99fa653/Asset_11.png/format=webp" },
+    { name: "Almonds",       emoji: "🌰", c: 6,  p: 6,  f: 14, img: "6af1fbab024a3990b659d6ad/Asset_7.png/format=webp" },
+    { name: "Milk",          emoji: "🥛", c: 12, p: 8,  f: 5,  img: "6af1fbc049f10b0edd996705/Asset_18.png/format=webp" },
+    { name: "Rice",          emoji: "🍚", c: 45, p: 4,  f: 0,  img: "6af1fbab024a3990b659d6af/Asset_8.png/format=webp" },
+    { name: "Spaghetti",     emoji: "🍝", c: 53, p: 10, f: 3,  img: "6af1fbbfa9598731b99fa655/Asset_12.png/format=webp" },
+    { name: "Salmon",        emoji: "🐟", c: 0,  p: 22, f: 7,  img: "6af1fbab024a3990b659d6b1/Asset_9.png/format=webp" },
+    { name: "Peanut butter", emoji: "🥜", c: 7,  p: 8,  f: 16, img: "6af1fbc049f10b0edd996707/Asset_19.png/format=webp" },
+    { name: "Broccoli",      emoji: "🥦", c: 6,  p: 3,  f: 0,  img: "6af1fabc52e1354a001bfc82/Asset_3.png/format=webp" },
+    { name: "Bread",         emoji: "🍞", c: 12, p: 4,  f: 1,  img: "6af1fbc049f10b0edd996709/Asset_20.png/format=webp" },
+    { name: "Water",         emoji: "💧", c: 0,  p: 0,  f: 0,  img: "6af1fbc1da92aa8917cee900/Asset_21.png/format=webp" }
+  ]
+};
+/* ================================================================== */
+
+const MACROS = [
+  { key: "carbs", label: "Carbs", f: "c" },
+  { key: "protein", label: "Protein", f: "p" },
+  { key: "fat", label: "Fat", f: "f" }
+];
+const $ = id => document.getElementById(id);
+let challengeIndex = 0;
+let onPlate = new Set();      // food indexes on the plate, in order added
+let celebrated = false;
+
+/* ---- scale the 1280×720 stage to whatever size it's embedded at ---- */
+function fit() {
+  const s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  $("stage").style.transform = `translate(-50%, -50%) scale(${s})`;
+}
+window.addEventListener("resize", fit);
+
+/* ---- food tiles ---- */
+function foodEl(i) {
+  const f = CONFIG.foods[i];
+  const el = document.createElement("div");
+  el.className = "food";
+  el.dataset.i = i;
+  el.setAttribute("role", "button");
+  el.setAttribute("tabindex", "0");
+  el.setAttribute("aria-label", `${f.name}: ${f.c}g carbs, ${f.p}g protein, ${f.f}g fat`);
+  const pic = document.createElement("div");
+  pic.className = "pic";
+  const img = document.createElement("img");
+  img.alt = ""; img.draggable = false; img.src = IMG + f.img;
+  img.onerror = () => { pic.innerHTML = `<span class="emoji">${f.emoji}</span>`; };
+  pic.appendChild(img);
+  el.appendChild(pic);
+  el.insertAdjacentHTML("beforeend",
+    `<div class="name">${f.name}</div>` +
+    (CONFIG.showMacros ? `<div class="mac">C ${f.c} · P ${f.p} · F ${f.f}</div>` : ""));
+  attachDrag(el);
+  el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(i); } });
+  return el;
+}
+
+function renderAll() {
+  const tray = $("tray"), items = $("plateItems");
+  tray.innerHTML = ""; items.innerHTML = "";
+  CONFIG.foods.forEach((_, i) => {
+    const el = foodEl(i);
+    if (onPlate.has(i)) el.classList.add("placeholder");   // keeps the tray layout steady
+    tray.appendChild(el);
+  });
+  onPlate.forEach(i => items.appendChild(foodEl(i)));
+  $("hint").style.display = onPlate.size ? "none" : "flex";
+  update();
+}
+
+function toggle(i) {
+  if (onPlate.has(i)) onPlate.delete(i); else onPlate.add(i);
+  renderAll();
+  const just = document.querySelector(`#plateItems .food[data-i="${i}"]`);
+  if (just) just.classList.add("pop");
+}
+
+/* ---- drag and drop (mouse, touch and pen) ---- */
+function attachDrag(el) {
+  el.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const i = +el.dataset.i;
+    const fromPlate = onPlate.has(i) && el.closest("#plate");
+    const startX = e.clientX, startY = e.clientY;
+    let ghost = null;
+    const plateEl = $("plate");
+
+    const overPlate = (x, y) => {
+      const r = plateEl.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const dx = (x - cx) / (r.width / 2), dy = (y - cy) / (r.height / 2);
+      return dx * dx + dy * dy <= 1.05;   // inside the oval
+    };
+
+    const move = ev => {
+      if (!ghost && Math.hypot(ev.clientX - startX, ev.clientY - startY) > 6) {
+        ghost = el.cloneNode(true);
+        ghost.classList.add("ghost");
+        const r = el.getBoundingClientRect();
+        ghost.style.width = r.width + "px"; ghost.style.height = r.height + "px";
+        document.body.appendChild(ghost);
+        el.style.opacity = ".25";
+      }
+      if (ghost) {
+        ghost.style.left = ev.clientX + "px"; ghost.style.top = ev.clientY + "px";
+        plateEl.classList.toggle("hot", !fromPlate && overPlate(ev.clientX, ev.clientY));
+      }
+    };
+    const up = ev => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      plateEl.classList.remove("hot");
+      if (!ghost) { toggle(i); return; }          // a tap adds/removes too
+      ghost.remove(); el.style.opacity = "";
+      const inside = overPlate(ev.clientX, ev.clientY);
+      if (!fromPlate && inside) toggle(i);         // dropped onto the plate
+      else if (fromPlate && !inside) toggle(i);    // dragged off the plate
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  });
+}
+
+/* ---- goals and totals ---- */
+function renderChallenges() {
+  $("challenges").innerHTML = CONFIG.challenges.map((ch, i) =>
+    `<button class="chip" aria-pressed="${i === challengeIndex}" data-i="${i}">${ch.name}</button>`).join("");
+  $("challenges").querySelectorAll("button").forEach(b => b.onclick = () => {
+    challengeIndex = +b.dataset.i; celebrated = false;
+    renderChallenges(); renderBars(); update();
+  });
+}
+
+function renderBars() {
+  const ch = CONFIG.challenges[challengeIndex];
+  $("goalName").textContent = ch.name.toUpperCase();
+  $("goalDesc").textContent = ch.desc;
+  $("bars").innerHTML = MACROS.map(m => {
+    const goal = ch.goals[m.key] || 0;
+    return `<div class="bar-row ${m.key}${goal ? "" : " nogoal"}" id="row-${m.key}">
+      <div class="label"><span>${m.label}</span><span class="num" id="num-${m.key}"></span></div>
+      <div class="track"><div class="fill" id="fill-${m.key}"></div></div></div>`;
+  }).join("");
+}
+
+function update() {
+  const ch = CONFIG.challenges[challengeIndex];
+  const t = { carbs: 0, protein: 0, fat: 0 };
+  onPlate.forEach(i => { const f = CONFIG.foods[i]; t.carbs += f.c; t.protein += f.p; t.fat += f.f; });
+  let set = 0, met = 0;
+  MACROS.forEach(m => {
+    const goal = ch.goals[m.key] || 0, val = t[m.key];
+    if (goal) {
+      set++;
+      const done = val >= goal; if (done) met++;
+      $("row-" + m.key).classList.toggle("done", done);
+      $("fill-" + m.key).style.width = Math.min(100, val / goal * 100) + "%";
+      $("num-" + m.key).textContent = done ? `${val}g / ${goal}g ✓` : `${val}g / ${goal}g · ${goal - val}g to go`;
+    } else {
+      $("num-" + m.key).textContent = `${val}g`;
+    }
+  });
+  const all = set > 0 && met === set;
+  $("banner").textContent = "🎉 Goal reached!";
+  $("banner").classList.toggle("show", all);
+  if (all && !celebrated) { celebrated = true; confetti(); }
+  if (!all) celebrated = false;
+}
+
+function confetti() {
+  const colors = ["#e39a2d", "#1f6fb2", "#8e5bb5", "#2f9e5c", "#d6ecf5", "#f6f4d6"];
+  const box = $("confetti");
+  for (let k = 0; k < 70; k++) {
+    const p = document.createElement("i");
+    p.style.left = Math.random() * 100 + "vw";
+    p.style.background = colors[k % colors.length];
+    p.style.animationDelay = Math.random() * .5 + "s";
+    p.style.animationDuration = 1.4 + Math.random() + "s";
+    box.appendChild(p);
+  }
+  setTimeout(() => box.innerHTML = "", 3200);
+}
+
+$("reset").onclick = () => { onPlate.clear(); renderAll(); };
+
+fit();
+renderChallenges();
+renderBars();
+renderAll();
+</script>
+</body>
+</html>
